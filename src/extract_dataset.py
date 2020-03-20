@@ -1,10 +1,13 @@
 import glob
-import os
-from comment_parser import comment_parser
-from collections import defaultdict
-import json
-import math
-
+import os   
+from comment_parser import comment_parser   #comment_parser()
+from collections import defaultdict         #defaultdict()
+import json                                 #dumps(),loads()
+import math                                 #log()
+import statistics                           #mean()
+import nltk
+from nltk.corpus import stopwords
+from tqdm import tqdm                      
 
 GLOBAL_PATH="/home/aditya/Desktop/SE_Project/src"
 # folder names of the datasets
@@ -19,8 +22,9 @@ file_extension_list=[
     "h",
     "cppdata",
     "script"
-
 ]
+
+stopwords=set(stopwords.words('english'))
 
 # List containing the items stored in the respective files
 FILE_LIST=[]
@@ -100,6 +104,7 @@ def extract(use_intermediate_files=True,make_intermediate_files=False):
             try:
                 # print(path)
                 data=file.read()
+                # PREPROCESS MULTI_LINE COMMENTS HERE
                 comments=comment_parser.extract_comments_from_str(data)
 
                 l=[c.text() for c in comments]
@@ -107,11 +112,7 @@ def extract(use_intermediate_files=True,make_intermediate_files=False):
             except (UnicodeDecodeError,comment_parser.UnsupportedError) as e:
                 continue
             file.close()
-
-
-    
-        # makes files FILE_LIST and ERROR_LIST based on paramenter 
-    
+   
     # making files based on choice
     if(make_intermediate_files):
         file_list=open("FILE_LIST","w")
@@ -134,13 +135,6 @@ def extract(use_intermediate_files=True,make_intermediate_files=False):
         datadic.close()
         datacomments.close()
 
-# class quality_measures():
-#     def __init__(self):
-        
-#         self.idf=None
-#         self.AvgIDF=None 
-#         self.MaxIDF=None
-#     def getAvgIDF(self,query,document):
 
 def idf(dataset,term):
     count=0
@@ -156,28 +150,117 @@ def idf(dataset,term):
             continue
     return abs(math.log(count/no_of_documents_corpus))
 
-def IDF():
+def tf(dataset,term,all_documents=True,document_path=""):
+    # all_documents=True is for tf(t,D)
+    # all_documents=False is for tf(t,d)
+    count=0
+    if(all_documents):
+        document_path=dataDic[dataset]
+        no_of_documents_corpus=len(document_path)
+        for f in document_path:
+            try:
+                file=open(f,"r")
+                string=file.read()
+                count+=string.count(term)
+            except IsADirectoryError:
+                continue
+    else: #counts tf only in single document (document_path)
+        try:
+            file=open(document_path,"r")
+            string=file.read()
+            count+=string.count(term)
+        except IsADirectoryError:
+            pass
+    return count
+
+def ictf(dataset,term):
+    document_path=dataDic[dataset]
+    no_of_documents_corpus=len(document_path)
+    TF=tf(dataset,term)
+    ICTF=math.log(no_of_documents_corpus/TF)
+    return abs(ICTF)
+
+def entropy(dataset,term):
+    document_path=dataDic[dataset]
+    no_of_documents_corpus=len(document_path)
+    dt=[]
+    for doc in document_path:
+        try:
+            file=open(doc,"r")
+            string=file.read()
+            if(term in string):
+                dt.append(doc)
+            file.close()
+        except IsADirectoryError:
+            continue
+    sum=0
+    # print("Term:",term,no_of_documents_corpus,len(dt))
+    denominator=tf(dataset,term)
+    for doc in dt:
+        temp=tf(dataset,term,False,doc)/denominator
+        sum+=temp+math.log(temp,no_of_documents_corpus)
+    return abs(sum)
+
+
+def specificity():
     global metric,dataDic,dataComments
     
     for dataset,files in dataDic.items():
-        for file in files:
+        print("Looping files in Dataset:",dataset,end=" ")
+        for file in tqdm(files):
             try:
                 comments=dataComments[file]
-                for comment in comments:
+                print("Looping comments in file:",files.index(file))
+                for comment in tqdm(comments):
                     idf_val=[]
-                    for term in comment.split(" "):
-                        idf_val.append(idf(dataset,term))
-                    print(idf_val)
-                    AvgIdf=abs(sum(idf_val)/len(idf_val))
-                    Stand_dev=[l-AvgIdf for l in idf_val]
-                    print(Stand_dev,sum(Stand_dev))
+                    ictf_val=[]
+                    entropy_val=[]
+
+                    terms=set(comment.split(" "))
+                    terms=list(terms-stopwords-set([" ",""]))
                     
+                    if(len(terms)==0): #case for comment made up completely of stopwords
+                        continue
+                    
+                    for term in terms:
+                        idf_val.append(idf(dataset,term))
+                        ictf_val.append(ictf(dataset,term))
+                        entropy_val.append(entropy(dataset,term))
+                    
+                    # print(entropy_val)
+                    AvgIdf=abs(statistics.mean(idf_val))
                     MaxIdf=abs(max(idf_val))
-                    # DevIDF=math.sqrt(sum([l-AvgIdf for l in idf_val])/len(idf_val))
-                    # print(comment,":",AvgIdf,MaxIdf,DevIDF)
-                    print("****************")
+                    DevIDF=statistics.pstdev(idf_val)
+                    
+                    AvgIctf=abs(sum(ictf_val)/len(ictf_val))
+                    MaxIctf=abs(max(ictf_val))
+                    DevIctf=statistics.pstdev(ictf_val)
+
+                    AvgEntropy=abs(statistics.mean(entropy_val))
+                    MedEntropy=abs(statistics.median(entropy_val))
+                    MaxEntropy=abs(max(entropy_val))
+                    DevEntropy=abs(statistics.pstdev(entropy_val))
+
+
+                                        
+                    
+                    
+                    # print(AvgIdf,MaxIdf,DevIDF,AvgIctf,MaxIctf,DevIctf,AvgEntropy,MedEntropy,MaxEntropy,DevEntropy)
+                    # print("******************************************")
+                    
                     metric[dataset][file][comment].append(AvgIdf)
                     metric[dataset][file][comment].append(MaxIdf)
+                    metric[dataset][file][comment].append(DevIDF)
+                    metric[dataset][file][comment].append(AvgIctf)
+                    metric[dataset][file][comment].append(MaxIctf)
+                    metric[dataset][file][comment].append(DevIctf)
+                    metric[dataset][file][comment].append(AvgEntropy)
+                    metric[dataset][file][comment].append(MedEntropy)
+                    metric[dataset][file][comment].append(MaxEntropy)
+                    metric[dataset][file][comment].append(DevEntropy)
+                    # metric[dataset][file][comment].append(QueryScope)
+                    # metric[dataset][file][comment].append(SimClarityScore)
+
             except KeyError: #path has no comment
                 continue
 
@@ -193,7 +276,7 @@ def main():
     print(len(ERROR_LIST))
     print(len(dataDic))
     print(len(dataComments))
-    IDF()
+    specificity()
 
 
 
