@@ -9,7 +9,10 @@ import nltk
 from nltk.corpus import stopwords
 from tqdm import tqdm                      
 
-GLOBAL_PATH="/home/aditya/Desktop/SE_Project/src"
+GLOBAL_PATH = os.path.dirname(os.path.abspath(__file__))
+        
+    
+
 # folder names of the datasets
 dataset_directory_list=[
     "codeblocks-17.12svn11256",
@@ -32,11 +35,11 @@ ERROR_LIST=[]
 
 # datadic={datasetName:[list of path of valid files]}
 dataDic=defaultdict(list)
-# dataComments={filepath:Commentobject}
+# dataComments={filepath:Comment}
 dataComments={}
 
 # metrics={dataset:{path:{comment:[AVGIDF]
-# 
+#
 metric={}
 
 
@@ -271,6 +274,7 @@ def specificity():
 
 
 def main():
+    print(GLOBAL_PATH)
     extract()
     print(len(FILE_LIST))
     print(len(ERROR_LIST))
