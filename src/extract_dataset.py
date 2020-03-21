@@ -38,8 +38,7 @@ dataDic=defaultdict(list)
 # dataComments={filepath:Comment}
 dataComments={}
 
-# metrics={dataset:{path:{comment:[AVGIDF]
-#
+# metrics={dataset:{path:{comment:[AVGIDF]}}}
 metric={}
 
 
@@ -138,7 +137,6 @@ def extract(use_intermediate_files=True,make_intermediate_files=False):
         datadic.close()
         datacomments.close()
 
-
 def idf(dataset,term):
     count=0
     documents_path=dataDic[dataset]
@@ -204,6 +202,39 @@ def entropy(dataset,term):
         sum+=temp+math.log(temp,no_of_documents_corpus)
     return abs(sum)
 
+def Query_Scope(dataset,terms):
+    document_path=dataDic[dataset]
+    no_of_documents_corpus=len(document_path)
+    dic=defaultdict(int)
+    for term in terms:
+        for path in document_path:
+            if(dic[path]==1):
+                continue
+            file=open(path,"r")
+            string=file.read()
+            if(term in string):
+                dic[path]=1
+    return sum(dic.values())/no_of_documents_corpus
+
+def SimClarity_Score(dataset,terms):
+    #calculating denominator
+    document_path=dataDic[dataset]
+    no_of_documents_corpus=len(document_path)
+    sum=0
+    for term in terms:
+        x=tf(dataset,term)/no_of_documents_corpus
+        temp=p(term,terms)
+        # print(temp,x)
+        a=abs(math.log(abs(temp/x)))
+        sum = sum +a
+    return sum
+
+def p(term,terms):
+    count=1
+    for t in term:
+        if(t==term):
+            count+=1
+    return count/len(terms)
 
 def specificity():
     global metric,dataDic,dataComments
@@ -244,12 +275,11 @@ def specificity():
                     MaxEntropy=abs(max(entropy_val))
                     DevEntropy=abs(statistics.pstdev(entropy_val))
 
+                    QueryScope=abs(Query_Scope(dataset,terms))
+                    SimClarityScore=abs(SimClarity_Score(dataset,terms))
 
-                                        
-                    
-                    
-                    # print(AvgIdf,MaxIdf,DevIDF,AvgIctf,MaxIctf,DevIctf,AvgEntropy,MedEntropy,MaxEntropy,DevEntropy)
-                    # print("******************************************")
+                    print(AvgIdf,MaxIdf,DevIDF,AvgIctf,MaxIctf,DevIctf,AvgEntropy,MedEntropy,MaxEntropy,DevEntropy,QueryScope,SimClarityScore)
+                    print("******************************************")
                     
                     metric[dataset][file][comment].append(AvgIdf)
                     metric[dataset][file][comment].append(MaxIdf)
@@ -261,11 +291,16 @@ def specificity():
                     metric[dataset][file][comment].append(MedEntropy)
                     metric[dataset][file][comment].append(MaxEntropy)
                     metric[dataset][file][comment].append(DevEntropy)
-                    # metric[dataset][file][comment].append(QueryScope)
-                    # metric[dataset][file][comment].append(SimClarityScore)
+                    metric[dataset][file][comment].append(QueryScope)
+                    metric[dataset][file][comment].append(SimClarityScore)
 
             except KeyError: #path has no comment
                 continue
+    
+    temp=open("Final values","w")
+    j=json.dumps(metric)
+    temp.write(j)
+    temp.close()
 
 
                
@@ -274,7 +309,7 @@ def specificity():
 
 
 def main():
-    print(GLOBAL_PATH)
+    # print(GLOBAL_PATH)
     extract()
     print(len(FILE_LIST))
     print(len(ERROR_LIST))
