@@ -1,4 +1,0 @@
-aaaa ICON "media/wxsmith.ico"
-wxsmith ICON "media/wxsmith.ico"
-
-#include "wx/msw/wx.rc"
