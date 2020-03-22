@@ -278,8 +278,8 @@ def specificity():
                     QueryScope=abs(Query_Scope(dataset,terms))
                     SimClarityScore=abs(SimClarity_Score(dataset,terms))
 
-                    print(AvgIdf,MaxIdf,DevIDF,AvgIctf,MaxIctf,DevIctf,AvgEntropy,MedEntropy,MaxEntropy,DevEntropy,QueryScope,SimClarityScore)
-                    print("******************************************")
+                    # print(AvgIdf,MaxIdf,DevIDF,AvgIctf,MaxIctf,DevIctf,AvgEntropy,MedEntropy,MaxEntropy,DevEntropy,QueryScope,SimClarityScore)
+                    # print("******************************************")
                     
                     metric[dataset][file][comment].append(AvgIdf)
                     metric[dataset][file][comment].append(MaxIdf)
@@ -302,6 +302,101 @@ def specificity():
     temp.write(j)
     temp.close()
 
+def w(dataset,term,document):
+    document_path=dataDic[dataset]
+    no_of_documents_corpus=len(document_path)
+    temp=1+math.log(tf(dataset,term,False,document))
+    print("Temp",temp)
+    return (temp*idf(dataset,term)/no_of_documents_corpus)
+
+def w_bar(dataset,term):
+    document_path=dataDic[dataset]
+    no_of_documents_corpus=len(document_path)
+    dt=[]
+    for doc in document_path:
+        try:
+            file=open(doc,"r")
+            string=file.read()
+            if(term in string):
+                dt.append(doc)
+            file.close()
+        except IsADirectoryError:
+            continue 
+    sum=0
+    for doc in dt:
+        sum=sum+w(dataset,term,doc)
+    
+    return sum/len(dt)
+
+def VAR(dataset,term):
+    document_path=dataDic[dataset]
+    no_of_documents_path=len(document_path)
+    dt=[]
+    for doc in document_path:
+        try:
+            file=open(doc,"r")
+            string=file.read()
+            if(term in string):
+                dt.append(doc)
+            file.close()
+        except IsADirectoryError:
+            continue 
+    print()
+    print()
+    print(term,len(dt))
+    wbar=w_bar(dataset,term)
+    print(wbar)
+    num=0
+    for doc in dt:
+        x=w(dataset,term,doc)
+        print(x)
+        num=num+(x - wbar)**2
+    return math.sqrt(num/len(dt))
+
+
+
+def coherency():
+    global metric,dataDic,dataComments
+    
+    for dataset,files in dataDic.items():
+        print("Looping files in Dataset:",dataset,end=" ")
+        for file in tqdm(files):
+            try:
+                comments=dataComments[file]
+                print("Looping comments in file:",files.index(file))
+                for comment in tqdm(comments):
+                    var_val=[]
+                    
+                    terms=set(comment.split(" "))
+                    terms=list(terms-stopwords-set([" ",""]))
+                    
+                    if(len(terms)==0): #case for comment made up completely of stopwords
+                        continue
+                    
+                    for term in terms:
+                        var_val.append(VAR(dataset,term))
+             
+                    # print(entropy_val)
+                    AvgVAR=abs(statistics.mean(var_val))
+                    MaxVAR=abs(max(var_val))
+                    SumVAR=sum(var_val)
+
+
+                    print(AvgVAR,MaxVAR,SumVAR)
+                    print("******************************************")
+                    
+                    metric[dataset][file][comment].append(AvgVAR)
+                    metric[dataset][file][comment].append(MaxVAR)
+                    metric[dataset][file][comment].append(SumVAR)
+
+
+            except KeyError: #path has no comment
+                continue
+    
+    temp=open("Final values","w")
+    j=json.dumps(metric)
+    temp.write(j)
+    temp.close()
 
                
                     
@@ -313,9 +408,11 @@ def main():
     extract()
     print(len(FILE_LIST))
     print(len(ERROR_LIST))
-    print(len(dataDic))
+    print(len(dataDic["codeblocks-17.12svn11256"]))
+    print(len(dataDic["7z1900-src"]))
     print(len(dataComments))
-    specificity()
+    # specificity()
+    # coherency()
 
 
 
