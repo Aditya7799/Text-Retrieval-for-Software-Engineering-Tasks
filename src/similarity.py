@@ -4,7 +4,8 @@ from collections import defaultdict
 from tqdm import tqdm
 from utils.constants import *
 
-class Coherency():
+
+class Similarity():
     def __init__(self,dataDic,dataComments,metric):
         self.dataDic=dataDic
         self.dataComments=dataComments
@@ -14,16 +15,16 @@ class Coherency():
         self.D_t={}
         self.t_f={}
         self.IDF={}
-        self.W_BAR={}
-        self.Var={}
+        self.ICTF={}
+        self.scq={}    
 
 
         for dataset in dataDic.keys():
             self.t_f[dataset]={}
             self.D_t[dataset]=defaultdict(list)
             self.IDF[dataset]={}
-            self.W_BAR[dataset]={}
-            self.Var[dataset]={}
+            self.ICTF[dataset]={}
+            self.scq[dataset]={}
 
     def Dt(self,dataset,term):
         #returns a list of paths of documents of dataset containing the term
@@ -49,6 +50,15 @@ class Coherency():
         doc_containing_term=len(self.Dt(dataset,term))
         self.IDF[dataset][term]=abs(math.log(doc_containing_term/no_of_documents_corpus))
         return self.IDF[dataset][term]
+        
+    def ictf(self,dataset,term):
+        if(term in self.ICTF[dataset]):
+            return self.ICTF[dataset][term]
+        document_path=self.dataDic[dataset]
+        no_of_documents_corpus=len(document_path)
+        TF=self.tf(dataset,term)
+        self.ICTF[dataset][term]=abs(math.log(no_of_documents_corpus/TF))
+        return abs(self.ICTF[dataset][term])
 
     def tf(self,dataset,term,all_documents=True,document_path=""):
         # all_documents=True is for tf(t,D)
@@ -78,61 +88,16 @@ class Coherency():
                 pass
             return count
 
-    def w(self,dataset,term,document):
-        document_path=self.dataDic[dataset]
-        no_of_documents_corpus=len(document_path)
-        temp=1+math.log(self.tf(dataset,term,False,document))
-        # print("Temp",temp)
-        return (temp*self.idf(dataset,term)/no_of_documents_corpus)
-
-    def w_bar(self,dataset,term):
-        if(term in self.W_BAR[dataset]):
-            return self.W_BAR[dataset][term]
-
-        document_path=self.dataDic[dataset]
-        no_of_documents_corpus=len(document_path)
-        dt=self.Dt(dataset,term)
+    def SCQ(self,dataset,term):
+        if(term in self.scq[dataset]):
+            return self.scq[dataset][term]
         
-        temp=0
-        for doc in dt:
-            temp+=self.w(dataset,term,doc)
-        
-        self.W_BAR[dataset][term]=temp/len(dt)
-        return self.W_BAR[dataset][term]
-
-    def VAR(self,dataset,term):
-        if(term in self.Var[dataset]):
-            return self.Var[dataset][term]
-
-        document_path=self.dataDic[dataset]
-        no_of_documents_path=len(document_path)
-        dt=self.Dt(dataset,term)
-        wbar=self.w_bar(dataset,term)
-        num=0
-        for doc in dt:
-            x=self.w(dataset,term,doc)
-            num=num+(x - wbar)**2
-        self.Var[dataset][term]=math.sqrt(num/len(dt))
-        return self.Var[dataset][term]
-
-    def simscore(self,doc1,doc2):
-        #to be implemented
-
-        return 1
-    
-    def Coh_Score(self,dataset,term):
-        dt=self.Dt(dataset,term)
-        n=len(dt)
-        temp=0
-        for i in range(n):
-            for j in range(i+1,n):
-                temp=temp+self.simscore(dt[i],dt[j])/(n*(n-1))
-        return temp
-
-                
+        self.scq[dataset][term]=1+math.log(self.ictf(dataset,term))*self.idf(dataset,term)
+        return self.scq[dataset][term]
 
 
-    def coherency(self):
+
+    def similarity(self):
         for dataset,files in self.dataDic.items():
             print("Looping files in Dataset:",dataset,end=" ")
             for file in tqdm(files):
@@ -140,8 +105,7 @@ class Coherency():
                     comments=self.dataComments[file]
                     print("Looping ",len(comments)," comments in file:",files.index(file),file)
                     for comment in comments:
-                        var_val=[]
-                        coh_score=[]
+                        scq_val=[]
                         
                         terms=set(comment.split(    " "))
                         terms=list(terms-stopwords-set([" ",""]))
@@ -150,25 +114,20 @@ class Coherency():
                             continue
                         
                         for term in terms:
-                            var_val.append(self.VAR(dataset,term))
-                            coh_score.append(self.Coh_Score(dataset,term))
+                            scq_val.append(self.SCQ(dataset,term))
+                            
                 
                         # print(entropy_val)
-                        AvgVAR=abs(statistics.mean(var_val))
-                        MaxVAR=abs(max(var_val))
-                        SumVAR=sum(var_val)
+                        AvgSCQ=abs(statistics.mean(scq_val))
+                        MaxSCQ=abs(max(scq_val))
+                        SumSCQ=sum(scq_val)
 
-                        CS=abs(statistics.mean(coh_score))
-
-                        # print(AvgVAR,MaxVAR,SumVAR,CS)
-                        # print("******************************************")
+                        print(comment,AvgSCQ,MaxSCQ,SumSCQ)
+                        print("******************************************")
                         
-                        self.metric[dataset][file][comment].append(AvgVAR)
-                        self.metric[dataset][file][comment].append(MaxVAR)
-                        self.metric[dataset][file][comment].append(SumVAR)
-                        self.metric[dataset][file][comment].append(CS)
-
-
+                        self.metric[dataset][file][comment].append(AvgSCQ)
+                        self.metric[dataset][file][comment].append(MaxSCQ)
+                        self.metric[dataset][file][comment].append(SumSCQ)
                 except KeyError: #path has no comment
                     continue
         

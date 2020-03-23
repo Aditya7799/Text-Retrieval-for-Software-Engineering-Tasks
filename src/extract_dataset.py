@@ -10,10 +10,10 @@ from nltk.corpus import stopwords
 from tqdm import tqdm                      
 from specificity import Specificity
 from coherency import Coherency
+from similarity import Similarity
+from term_relatedness import Term_Relatedness
 from utils.constants import *
 GLOBAL_PATH = os.path.dirname(os.path.abspath(__file__))
-
-
 
 def extract(use_intermediate_files=True,make_intermediate_files=False):
     global FILE_LIST,ERROR_LIST,dataComments,dataDic,metric
@@ -128,6 +128,11 @@ def main():
     obj2=Coherency(dataDic,dataComments,metric)
     obj2.coherency()
 
+    # obj3=Similarity(dataDic,dataComments,metric)
+    # obj3.similarity()
+
+    # obj4=Term_Relatedness(dataDic,dataComments,metric)
+    # obj4.term_relatedness()
 
 
 

@@ -86,7 +86,7 @@ class Specificity():
         document_path=self.dataDic[dataset]
         no_of_documents_corpus=len(document_path)
         TF=self.tf(dataset,term)
-        self.ICTF[dataset][term]=math.log(no_of_documents_corpus/TF)
+        self.ICTF[dataset][term]=abs(math.log(no_of_documents_corpus/TF))
         return self.ICTF[dataset][term]
 
     def entropy(self,dataset,term):
