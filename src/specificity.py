@@ -3,40 +3,53 @@ import statistics
 from collections import defaultdict
 from tqdm import tqdm
 from utils.constants import *
+
 class Specificity():
     def __init__(self,dataDic,dataComments,metric):
         self.dataDic=dataDic
         self.dataComments=dataComments
         self.metric=metric
 
-        #memoization dictionaries
-        self.D_t=defaultdict(list)
-        
+        #memoization dictionaries for performance
+        self.D_t={}
         self.t_f={}
+        self.IDF={}
+        self.ICTF={}
+        self.ENTPY={}
+
         for dataset in dataDic.keys():
+            self.IDF[dataset]={}
+            self.ICTF[dataset]={}
+            self.ENTPY[dataset]={}
             self.t_f[dataset]={}
+            self.D_t[dataset]=defaultdict(list)
+
         
     def Dt(self,dataset,term):
         #returns a list of paths of documents of dataset containing the term
-        if(len(self.D_t[term])!=0):
-            return self.D_t[term]
+        if(len(self.D_t[dataset][term])!=0):
+            return self.D_t[dataset][term]
         
         for f in self.dataDic[dataset]:
             try:
                 file=open(f,"r")
                 string=file.read()
                 if(term in string):
-                    self.D_t[term].append(f)
+                    self.D_t[dataset][term].append(f)
             except IsADirectoryError:
                 continue
-        return self.D_t[term]
+        return self.D_t[dataset][term]
 
 
     def idf(self,dataset,term):
+        if(term in self.IDF[dataset]):
+            return self.IDF[dataset][term]
+
         documents_path=self.dataDic[dataset]
         no_of_documents_corpus=len(documents_path)
         doc_containing_term=len(self.Dt(dataset,term))
-        return abs(math.log(doc_containing_term/no_of_documents_corpus))
+        self.IDF[dataset][term]=abs(math.log(doc_containing_term/no_of_documents_corpus))
+        return self.IDF[dataset][term]
         
     def tf(self,dataset,term,all_documents=True,document_path=""):
         # all_documents=True is for tf(t,D)
@@ -68,13 +81,17 @@ class Specificity():
 
 
     def ictf(self,dataset,term):
+        if(term in self.ICTF[dataset]):
+            return self.ICTF[dataset][term]
         document_path=self.dataDic[dataset]
         no_of_documents_corpus=len(document_path)
         TF=self.tf(dataset,term)
-        ICTF=math.log(no_of_documents_corpus/TF)
-        return abs(ICTF)
+        self.ICTF[dataset][term]=math.log(no_of_documents_corpus/TF)
+        return self.ICTF[dataset][term]
 
     def entropy(self,dataset,term):
+        if(term in self.ENTPY[dataset]):
+            return self.ENTPY[dataset][term]
         document_path=self.dataDic[dataset]
         no_of_documents_corpus=len(document_path)
         dt=self.Dt(dataset,term)
@@ -84,7 +101,8 @@ class Specificity():
         for doc in dt:
             temp=self.tf(dataset,term,False,doc)/denominator
             sum+=temp+math.log(temp,no_of_documents_corpus)
-        return abs(sum)
+        self.ENTPY[dataset][term]=abs(sum)
+        return self.ENTPY[dataset][term]
 
     def Query_Scope(self,dataset,terms):
         document_path=self.dataDic[dataset]
@@ -94,9 +112,9 @@ class Specificity():
             for path in document_path:
                 if(dic[path]==1):
                     continue
-                # if(path in self.D_t[dataset][term]):
-                #     dic[path]=1
-                #     continue
+                if(path in self.D_t[dataset][term]):
+                    dic[path]=1
+                    continue
                 file=open(path,"r")
                 string=file.read()
                 if(term in string):
@@ -155,8 +173,9 @@ class Specificity():
                         QueryScope=abs(self.Query_Scope(dataset,terms))
                         SimClarityScore=abs(self.SimClarity_Score(dataset,terms))
 
-                        print(AvgIdf,MaxIdf,DevIDF,AvgIctf,MaxIctf,DevIctf,AvgEntropy,MedEntropy,MaxEntropy,DevEntropy,QueryScope,SimClarityScore)
-                        print("******************************************")
+                        # print(repr(comment))
+                        # print(AvgIdf,MaxIdf,DevIDF,AvgIctf,MaxIctf,DevIctf,AvgEntropy,MedEntropy,MaxEntropy,DevEntropy,QueryScope,SimClarityScore)
+                        # print("******************************************")
                         
                         self.metric[dataset][file][comment].append(AvgIdf)
                         self.metric[dataset][file][comment].append(MaxIdf)
@@ -170,7 +189,6 @@ class Specificity():
                         self.metric[dataset][file][comment].append(DevEntropy)
                         self.metric[dataset][file][comment].append(QueryScope)
                         self.metric[dataset][file][comment].append(SimClarityScore)
-                        
                 except KeyError: #path has no comment
                     continue
-        return self.metric
+

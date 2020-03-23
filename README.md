@@ -2,6 +2,9 @@
 Predicting Query quality for Source Code Dataset
 Papers refered are linked in the repository.
 
+**Need to create a hidden folder called ".intermediate if you want to store the intermediate files in extract_dataset.py**
+
+**Latest Commit has file "Val"(32Mb) which has dump of metric dictionary after running specificity (12 pre-retrieval metrics).
 # Requirements so far
 1.  **nltk and corpus-data**
 So far this is used to remove stop-words from the queries.

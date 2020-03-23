@@ -120,13 +120,23 @@ def extract(use_intermediate_files=True,make_intermediate_files=False):
 
 def main():
     
-    # extract(True,False)
-    extract(False,True)
+    extract(True,False)
+    # extract(False,True)
     # obj1=Specificity(dataDic,dataComments,metric)
     # obj1.specificity()
 
-    # obj2=Coherency(dataDic,dataComments,metric)
-    # obj2.coherency()
+    obj2=Coherency(dataDic,dataComments,metric)
+    obj2.coherency()
+
+
+
+
+
+
+    text=json.dumps(metric)
+    f=open("Val","w")
+    f.write(text)
+    f.close()
 
 
 

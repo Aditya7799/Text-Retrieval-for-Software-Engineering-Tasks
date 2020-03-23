@@ -10,33 +10,45 @@ class Coherency():
         self.dataComments=dataComments
         self.metric=metric
 
-        #memoization dictionaries
-        self.D_t=defaultdict(list)
-        
+        #memoization dictionaries for performance
+        self.D_t={}
         self.t_f={}
+        self.IDF={}
+        self.W_BAR={}
+        self.Var={}
+
+
         for dataset in dataDic.keys():
             self.t_f[dataset]={}
+            self.D_t[dataset]=defaultdict(list)
+            self.IDF[dataset]={}
+            self.W_BAR[dataset]={}
+            self.Var[dataset]={}
 
     def Dt(self,dataset,term):
         #returns a list of paths of documents of dataset containing the term
-        if(len(self.D_t[term])!=0):
-            return self.D_t[term]
+        if(len(self.D_t[dataset][term])!=0):
+            return self.D_t[dataset][term]
         
         for f in self.dataDic[dataset]:
             try:
                 file=open(f,"r")
                 string=file.read()
                 if(term in string):
-                    self.D_t[term].append(f)
+                    self.D_t[dataset][term].append(f)
             except IsADirectoryError:
                 continue
-        return self.D_t[term]
+        return self.D_t[dataset][term]
 
     def idf(self,dataset,term):
+        if(term in self.IDF[dataset]):
+            return self.IDF[dataset][term]
+
         documents_path=self.dataDic[dataset]
         no_of_documents_corpus=len(documents_path)
         doc_containing_term=len(self.Dt(dataset,term))
-        return abs(math.log(doc_containing_term/no_of_documents_corpus))
+        self.IDF[dataset][term]=abs(math.log(doc_containing_term/no_of_documents_corpus))
+        return self.IDF[dataset][term]
 
     def tf(self,dataset,term,all_documents=True,document_path=""):
         # all_documents=True is for tf(t,D)
@@ -74,17 +86,24 @@ class Coherency():
         return (temp*self.idf(dataset,term)/no_of_documents_corpus)
 
     def w_bar(self,dataset,term):
+        if(term in self.W_BAR[dataset]):
+            return self.W_BAR[dataset][term]
+
         document_path=self.dataDic[dataset]
         no_of_documents_corpus=len(document_path)
         dt=self.Dt(dataset,term)
         
-        sum=0
+        temp=0
         for doc in dt:
-            sum=sum+self.w(dataset,term,doc)
+            temp+=self.w(dataset,term,doc)
         
-        return sum/len(dt)
+        self.W_BAR[dataset][term]=temp/len(dt)
+        return self.W_BAR[dataset][term]
 
     def VAR(self,dataset,term):
+        if(term in self.Var[dataset]):
+            return self.Var[dataset][term]
+
         document_path=self.dataDic[dataset]
         no_of_documents_path=len(document_path)
         dt=self.Dt(dataset,term)
@@ -93,7 +112,8 @@ class Coherency():
         for doc in dt:
             x=self.w(dataset,term,doc)
             num=num+(x - wbar)**2
-        return math.sqrt(num/len(dt))
+        self.Var[dataset][term]=math.sqrt(num/len(dt))
+        return self.Var[dataset][term]
 
     def coherency(self):
         for dataset,files in self.dataDic.items():
@@ -101,12 +121,11 @@ class Coherency():
             for file in tqdm(files):
                 try:
                     comments=self.dataComments[file]
-                    print("Looping comments in file:",files.index(file))
-                    for comment in tqdm(comments):
-                        print(comment)
+                    print("Looping ",len(comments)," comments in file:",files.index(file),file)
+                    for comment in comments:
                         var_val=[]
                         
-                        terms=set(comment.split(" "))
+                        terms=set(comment.split(    " "))
                         terms=list(terms-stopwords-set([" ",""]))
                         
                         if(len(terms)==0): #case for comment made up completely of stopwords
@@ -121,8 +140,8 @@ class Coherency():
                         SumVAR=sum(var_val)
 
 
-                        print(AvgVAR,MaxVAR,SumVAR)
-                        print("******************************************")
+                        # print(AvgVAR,MaxVAR,SumVAR)
+                        # print("******************************************")
                         
                         self.metric[dataset][file][comment].append(AvgVAR)
                         self.metric[dataset][file][comment].append(MaxVAR)
@@ -131,4 +150,4 @@ class Coherency():
 
                 except KeyError: #path has no comment
                     continue
-        return self.metric
+        
