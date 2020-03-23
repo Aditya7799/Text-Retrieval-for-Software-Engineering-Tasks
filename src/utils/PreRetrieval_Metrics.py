@@ -4,7 +4,7 @@ from collections import defaultdict
 from tqdm import tqdm
 from utils.constants import *
 
-class Specificity():
+class Memoization():
     def __init__(self,dataDic,dataComments,metric):
         self.dataDic=dataDic
         self.dataComments=dataComments
@@ -16,46 +16,60 @@ class Specificity():
         self.IDF={}
         self.ICTF={}
         self.ENTPY={}
+        self.scq={} 
+        self.W_BAR={}
+        self.Var={}
 
         for dataset in dataDic.keys():
             self.IDF[dataset]={}
             self.ICTF[dataset]={}
             self.ENTPY[dataset]={}
             self.t_f[dataset]={}
-            self.D_t[dataset]=defaultdict(list)     
+            self.D_t[dataset]=defaultdict(list)
+            self.scq[dataset]={}
+            self.W_BAR[dataset]={}
+            self.Var[dataset]={} 
+
+class Specificity():
+    def __init__(self,dataDic,dataComments,metric,mem):
+        self.dataDic=dataDic
+        self.dataComments=dataComments
+        self.metric=metric
+        self.mem=mem
+ 
     
     def Dt(self,dataset,term):
         #returns a list of paths of documents of dataset containing the term
-        if(len(self.D_t[dataset][term])!=0):
-            return self.D_t[dataset][term]
+        if(len(self.mem.D_t[dataset][term])!=0):
+            return self.mem.D_t[dataset][term]
         
         for f in self.dataDic[dataset]:
             try:
                 file=open(f,"r")
                 string=file.read()
                 if(term in string):
-                    self.D_t[dataset][term].append(f)
+                    self.mem.D_t[dataset][term].append(f)
             except IsADirectoryError:
                 continue
-        return self.D_t[dataset][term]
+        return self.mem.D_t[dataset][term]
 
     def idf(self,dataset,term):
-        if(term in self.IDF[dataset]):
-            return self.IDF[dataset][term]
+        if(term in self.mem.IDF[dataset]):
+            return self.mem.IDF[dataset][term]
 
         documents_path=self.dataDic[dataset]
         no_of_documents_corpus=len(documents_path)
         doc_containing_term=len(self.Dt(dataset,term))
-        self.IDF[dataset][term]=abs(math.log(doc_containing_term/no_of_documents_corpus))
-        return self.IDF[dataset][term]
+        self.mem.IDF[dataset][term]=abs(math.log(doc_containing_term/no_of_documents_corpus))
+        return self.mem.IDF[dataset][term]
         
     def tf(self,dataset,term,all_documents=True,document_path=""):
         # all_documents=True is for tf(t,D)
         # all_documents=False is for tf(t,d)
         count=0
         if(all_documents):
-            if(term in self.t_f[dataset]):
-                return self.t_f[dataset][term]
+            if(term in self.mem.t_f[dataset]):
+                return self.mem.t_f[dataset][term]
             
             document_path=self.dataDic[dataset]
             no_of_documents_corpus=len(document_path)
@@ -66,7 +80,7 @@ class Specificity():
                     count+=string.count(term)
                 except IsADirectoryError:
                     continue
-            self.t_f[dataset][term]=count
+            self.mem.t_f[dataset][term]=count
             return count
         else: #counts tf only in single document (document_path)
             try:
@@ -78,17 +92,17 @@ class Specificity():
             return count
 
     def ictf(self,dataset,term):
-        if(term in self.ICTF[dataset]):
-            return self.ICTF[dataset][term]
+        if(term in self.mem.ICTF[dataset]):
+            return self.mem.ICTF[dataset][term]
         document_path=self.dataDic[dataset]
         no_of_documents_corpus=len(document_path)
         TF=self.tf(dataset,term)
-        self.ICTF[dataset][term]=abs(math.log(no_of_documents_corpus/TF))
-        return self.ICTF[dataset][term]
+        self.mem.ICTF[dataset][term]=abs(math.log(no_of_documents_corpus/TF))
+        return self.mem.ICTF[dataset][term]
 
     def entropy(self,dataset,term):
-        if(term in self.ENTPY[dataset]):
-            return self.ENTPY[dataset][term]
+        if(term in self.mem.ENTPY[dataset]):
+            return self.mem.ENTPY[dataset][term]
         document_path=self.dataDic[dataset]
         no_of_documents_corpus=len(document_path)
         dt=self.Dt(dataset,term)
@@ -98,8 +112,8 @@ class Specificity():
         for doc in dt:
             temp=self.tf(dataset,term,False,doc)/denominator
             sum+=temp+math.log(temp,no_of_documents_corpus)
-        self.ENTPY[dataset][term]=abs(sum)
-        return self.ENTPY[dataset][term]
+        self.mem.ENTPY[dataset][term]=abs(sum)
+        return self.mem.ENTPY[dataset][term]
 
     def Query_Scope(self,dataset,terms):
         document_path=self.dataDic[dataset]
@@ -109,7 +123,7 @@ class Specificity():
             for path in document_path:
                 if(dic[path]==1):
                     continue
-                if(path in self.D_t[dataset][term]):
+                if(path in self.mem.D_t[dataset][term]):
                     dic[path]=1
                     continue
                 file=open(path,"r")
@@ -182,67 +196,54 @@ class Specificity():
         self.metric[dataset][file][comment].append(SimClarityScore)
 
 class Similarity():
-    def __init__(self,dataDic,dataComments,metric):
+    def __init__(self,dataDic,dataComments,metric,mem):
         self.dataDic=dataDic
         self.dataComments=dataComments
         self.metric=metric
+        self.mem=mem
 
-        #memoization dictionaries for performance
-        self.D_t={}
-        self.t_f={}
-        self.IDF={}
-        self.ICTF={}
-        self.scq={}    
-
-
-        for dataset in dataDic.keys():
-            self.t_f[dataset]={}
-            self.D_t[dataset]=defaultdict(list)
-            self.IDF[dataset]={}
-            self.ICTF[dataset]={}
-            self.scq[dataset]={}
 
     def Dt(self,dataset,term):
         #returns a list of paths of documents of dataset containing the term
-        if(len(self.D_t[dataset][term])!=0):
-            return self.D_t[dataset][term]
+        if(len(self.mem.D_t[dataset][term])!=0):
+            return self.mem.D_t[dataset][term]
         
         for f in self.dataDic[dataset]:
             try:
                 file=open(f,"r")
                 string=file.read()
                 if(term in string):
-                    self.D_t[dataset][term].append(f)
+                    self.mem.D_t[dataset][term].append(f)
             except IsADirectoryError:
                 continue
-        return self.D_t[dataset][term]
+        return self.mem.D_t[dataset][term]
 
     def idf(self,dataset,term):
-        if(term in self.IDF[dataset]):
-            return self.IDF[dataset][term]
+        if(term in self.mem.IDF[dataset]):
+            return self.mem.IDF[dataset][term]
 
         documents_path=self.dataDic[dataset]
         no_of_documents_corpus=len(documents_path)
         doc_containing_term=len(self.Dt(dataset,term))
-        self.IDF[dataset][term]=abs(math.log(doc_containing_term/no_of_documents_corpus))
-        return self.IDF[dataset][term]
+        self.mem.IDF[dataset][term]=abs(math.log(doc_containing_term/no_of_documents_corpus))
+        return self.mem.IDF[dataset][term]
         
     def ictf(self,dataset,term):
-        if(term in self.ICTF[dataset]):
-            return self.ICTF[dataset][term]
+        if(term in self.mem.ICTF[dataset]):
+            return self.mem.ICTF[dataset][term]
         document_path=self.dataDic[dataset]
         no_of_documents_corpus=len(document_path)
         TF=self.tf(dataset,term)
-        self.ICTF[dataset][term]=abs(math.log(no_of_documents_corpus/TF))
-        return abs(self.ICTF[dataset][term])
+        self.mem.ICTF[dataset][term]=abs(math.log(no_of_documents_corpus/TF))
+        return abs(self.mem.ICTF[dataset][term])
 
     def tf(self,dataset,term,all_documents=True,document_path=""):
         # all_documents=True is for tf(t,D)
         # all_documents=False is for tf(t,d)
         count=0
         if(all_documents):
-            if(term in self.t_f[dataset]):
-                return self.t_f[dataset][term]
+            if(term in self.mem.t_f[dataset]):
+                return self.mem.t_f[dataset][term]
             
             document_path=self.dataDic[dataset]
             no_of_documents_corpus=len(document_path)
@@ -253,7 +254,7 @@ class Similarity():
                     count+=string.count(term)
                 except IsADirectoryError:
                     continue
-            self.t_f[dataset][term]=count
+            self.mem.t_f[dataset][term]=count
             return count
         else: #counts tf only in single document (document_path)
             try:
@@ -265,11 +266,11 @@ class Similarity():
             return count
 
     def SCQ(self,dataset,term):
-        if(term in self.scq[dataset]):
-            return self.scq[dataset][term]
+        if(term in self.mem.scq[dataset]):
+            return self.mem.scq[dataset][term]
         
-        self.scq[dataset][term]=1+math.log(self.ictf(dataset,term))*self.idf(dataset,term)
-        return self.scq[dataset][term]
+        self.mem.scq[dataset][term]=1+math.log(self.ictf(dataset,term))*self.idf(dataset,term)
+        return self.mem.scq[dataset][term]
 
     def similarity(self,dataset,file,comment):
         # print("Calculating Similarity")
@@ -298,31 +299,28 @@ class Similarity():
         self.metric[dataset][file][comment].append(SumSCQ)
 
 class Term_Relatedness():
-    def __init__(self,dataDic,dataComments,metric):
+    def __init__(self,dataDic,dataComments,metric,mem):
         self.dataDic=dataDic
         self.dataComments=dataComments
         self.metric=metric
+        self.mem=mem
 
-        #memoization dictionaries for performance
-        self.D_t={}
 
-        for dataset in dataDic.keys():
-            self.D_t[dataset]=defaultdict(list)
      
     def Dt(self,dataset,term):
         #returns a list of paths of documents of dataset containing the term
-        if(len(self.D_t[dataset][term])!=0):
-            return self.D_t[dataset][term]
+        if(len(self.mem.D_t[dataset][term])!=0):
+            return self.mem.D_t[dataset][term]
         
         for f in self.dataDic[dataset]:
             try:
                 file=open(f,"r")
                 string=file.read()
                 if(term in string):
-                    self.D_t[dataset][term].append(f)
+                    self.mem.D_t[dataset][term].append(f)
             except IsADirectoryError:
                 continue
-        return self.D_t[dataset][term]
+        return self.mem.D_t[dataset][term]
 
     def PMI(self,dataset,term1,term2):
         d1=set(self.Dt(dataset,term1))
@@ -360,58 +358,44 @@ class Term_Relatedness():
         self.metric[dataset][file][comment].append(MaxPMI)
 
 class Coherency():
-    def __init__(self,dataDic,dataComments,metric):
+    def __init__(self,dataDic,dataComments,metric,mem):
         self.dataDic=dataDic
         self.dataComments=dataComments
         self.metric=metric
-
-        #memoization dictionaries for performance
-        self.D_t={}
-        self.t_f={}
-        self.IDF={}
-        self.W_BAR={}
-        self.Var={}
-
-
-        for dataset in dataDic.keys():
-            self.t_f[dataset]={}
-            self.D_t[dataset]=defaultdict(list)
-            self.IDF[dataset]={}
-            self.W_BAR[dataset]={}
-            self.Var[dataset]={}
-
+        self.mem=mem
+        
     def Dt(self,dataset,term):
         #returns a list of paths of documents of dataset containing the term
-        if(len(self.D_t[dataset][term])!=0):
-            return self.D_t[dataset][term]
+        if(len(self.mem.D_t[dataset][term])!=0):
+            return self.mem.D_t[dataset][term]
         
         for f in self.dataDic[dataset]:
             try:
                 file=open(f,"r")
                 string=file.read()
                 if(term in string):
-                    self.D_t[dataset][term].append(f)
+                    self.mem.D_t[dataset][term].append(f)
             except IsADirectoryError:
                 continue
-        return self.D_t[dataset][term]
+        return self.mem.D_t[dataset][term]
 
     def idf(self,dataset,term):
-        if(term in self.IDF[dataset]):
-            return self.IDF[dataset][term]
+        if(term in self.mem.IDF[dataset]):
+            return self.mem.IDF[dataset][term]
 
         documents_path=self.dataDic[dataset]
         no_of_documents_corpus=len(documents_path)
         doc_containing_term=len(self.Dt(dataset,term))
-        self.IDF[dataset][term]=abs(math.log(doc_containing_term/no_of_documents_corpus))
-        return self.IDF[dataset][term]
+        self.mem.IDF[dataset][term]=abs(math.log(doc_containing_term/no_of_documents_corpus))
+        return self.mem.IDF[dataset][term]
 
     def tf(self,dataset,term,all_documents=True,document_path=""):
         # all_documents=True is for tf(t,D)
         # all_documents=False is for tf(t,d)
         count=0
         if(all_documents):
-            if(term in self.t_f[dataset]):
-                return self.t_f[dataset][term]
+            if(term in self.mem.t_f[dataset]):
+                return self.mem.t_f[dataset][term]
             
             document_path=self.dataDic[dataset]
             no_of_documents_corpus=len(document_path)
@@ -422,7 +406,7 @@ class Coherency():
                     count+=string.count(term)
                 except IsADirectoryError:
                     continue
-            self.t_f[dataset][term]=count
+            self.mem.t_f[dataset][term]=count
             return count
         else: #counts tf only in single document (document_path)
             try:
@@ -441,8 +425,8 @@ class Coherency():
         return (temp*self.idf(dataset,term)/no_of_documents_corpus)
 
     def w_bar(self,dataset,term):
-        if(term in self.W_BAR[dataset]):
-            return self.W_BAR[dataset][term]
+        if(term in self.mem.W_BAR[dataset]):
+            return self.mem.W_BAR[dataset][term]
 
         document_path=self.dataDic[dataset]
         no_of_documents_corpus=len(document_path)
@@ -452,12 +436,12 @@ class Coherency():
         for doc in dt:
             temp+=self.w(dataset,term,doc)
         
-        self.W_BAR[dataset][term]=temp/len(dt)
-        return self.W_BAR[dataset][term]
+        self.mem.W_BAR[dataset][term]=temp/len(dt)
+        return self.mem.W_BAR[dataset][term]
 
     def VAR(self,dataset,term):
-        if(term in self.Var[dataset]):
-            return self.Var[dataset][term]
+        if(term in self.mem.Var[dataset]):
+            return self.mem.Var[dataset][term]
 
         document_path=self.dataDic[dataset]
         no_of_documents_path=len(document_path)
@@ -467,8 +451,8 @@ class Coherency():
         for doc in dt:
             x=self.w(dataset,term,doc)
             num=num+(x - wbar)**2
-        self.Var[dataset][term]=math.sqrt(num/len(dt))
-        return self.Var[dataset][term]
+        self.mem.Var[dataset][term]=math.sqrt(num/len(dt))
+        return self.mem.Var[dataset][term]
 
     def simscore(self,doc1,doc2):
         #to be implemented

@@ -119,12 +119,12 @@ def main():
     
     extract(True,False)
     # extract(False,True)
-
-    obj1=Specificity(dataDic,dataComments,metric)
-    obj2=Coherency(dataDic,dataComments,metric)
-    obj3=Similarity(dataDic,dataComments,metric)
-    obj4=Term_Relatedness(dataDic,dataComments,metric)
-
+    mem=Memoization(dataDic,dataComments,metric)
+    obj1=Specificity(dataDic,dataComments,metric,mem)
+    obj2=Coherency(dataDic,dataComments,metric,mem)
+    obj3=Similarity(dataDic,dataComments,metric,mem)
+    obj4=Term_Relatedness(dataDic,dataComments,metric,mem)
+    print(metric.keys())
     for dataset,files in dataDic.items():
         print("Looping files in Dataset:",dataset,end=" ")
         for file in tqdm(files):
@@ -133,20 +133,26 @@ def main():
                 print("Looping",len(comments)," comments in file :",files.index(file),file)
                 for comment in  comments:
                     try:
+                        # print(repr(comment))
                         obj1.specificity(dataset,file,comment)
                         obj2.coherency(dataset,file,comment)
                         obj3.similarity(dataset,file,comment)
                         obj4.term_relatedness(dataset,file,comment)
                     except Exception:
                         continue
+                    # break
             except KeyError: #path has no comment
                 continue
+        #     break
+        # break
+    
+    
+    print(metric["codeblocks-17.12svn11256"]["/home/aditya/Desktop/SE_Project/src/Datasets/codeblocks-17.12svn11256/src/tools/ConsoleRunner/main.cpp"]['\n * This file is part of the Code::Blocks IDE and licensed under the GNU General Public License, version 3\n * http://www.gnu.org/licenses/gpl-3.0.html\n *\n * $Revision$\n * $Id$\n * $HeadURL$\n '])
 
-
-    text=json.dumps(metric)
-    f=open("Val","w")
-    f.write(text)
-    f.close()
+    # text=json.dumps(metric)
+    # f=open("Val","w")
+    # f.write(text)
+    # f.close()
 
 
 
