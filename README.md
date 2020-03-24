@@ -39,5 +39,16 @@ path = path of the source code file
 comment = comment in the source code file
 The list stores values in the follwing order [AvgIdf,MaxIdf,DevIDF,AvgIctf,MaxIctf,DevIctf,AvgEntropy,MedEntropy,MaxEntropy,DevEntropy]
 
-## Function description
+## CLASS DESCRIPTION
+1. **Memoization** - this class serves as the memory class to store calculated intermediate values that can be reused by other classes. The memoized values are:
+   - D_t[dataset][term] : Dictionary that stores list of paths of all document in the dataset that contain term.
+   - t_f[dataset][term] : Dictionary that stores the term-frequency of term in dataset.
+   - IDF[dataset][term] : Dictionary that stores the InverseDocument-Frequency of term in dataset.
+   - ICTF[dataset][term]: Dictionary that stores the Inverse Collection Term Frequency of term in dataset.
+   - ENTPY[dataset][term] : Dictionary that stores the entropy values of term in dataset.
+   - scq[dataset][term] : Dictionary that stores the scq similary value of term in dataset
+   - W_BAR[dataset][term] : Dictionary that stores the w-average values of term in dataset.
+   - Var[dataset][term]: Dictionary that stores the Var Coherency value of term in dataset.
+
+## FUNCTION DESCRIPTION
 1.  

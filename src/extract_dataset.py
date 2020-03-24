@@ -118,7 +118,7 @@ def extract(use_intermediate_files=True,make_intermediate_files=False):
 def main():
     
     extract(True,False)
-    # extract(False,True)
+    # extract(False,True)clear.
     mem=Memoization(dataDic,dataComments,metric)
     obj1=Specificity(dataDic,dataComments,metric,mem)
     obj2=Coherency(dataDic,dataComments,metric,mem)
@@ -149,10 +149,10 @@ def main():
     
     print(metric["codeblocks-17.12svn11256"]["/home/aditya/Desktop/SE_Project/src/Datasets/codeblocks-17.12svn11256/src/tools/ConsoleRunner/main.cpp"]['\n * This file is part of the Code::Blocks IDE and licensed under the GNU General Public License, version 3\n * http://www.gnu.org/licenses/gpl-3.0.html\n *\n * $Revision$\n * $Id$\n * $HeadURL$\n '])
 
-    # text=json.dumps(metric)
-    # f=open("Val","w")
-    # f.write(text)
-    # f.close()
+    text=json.dumps(metric)
+    f=open("Val","w")
+    f.write(text)
+    f.close()
 
 
 
