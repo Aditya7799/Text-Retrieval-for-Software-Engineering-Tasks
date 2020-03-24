@@ -1,6 +1,13 @@
+import glob
+import os   
+from comment_parser import comment_parser   #comment_parser()
+from collections import defaultdict         #defaultdict()
+import json                                 #dumps(),loads()
+import math                                 #log()
+import statistics                           #mean()
+import nltk
 from nltk.corpus import stopwords
-from collections import defaultdict
-
+from tqdm import tqdm                      
 
 # folder names of the datasets
 dataset_directory_list=[
@@ -30,5 +37,3 @@ metric={}
 
 stopwords=set(stopwords.words('english'))
 
-def isValid(f):
-    return (f[f.rfind(".")+1:] in file_extension_list)
