@@ -13,7 +13,8 @@ from utils.constants import *
 GLOBAL_PATH = os.path.dirname(os.path.abspath(__file__))
 import threading  
 import multiprocessing
-from multiprocessing import Process
+from multiprocessing import Process,Manager
+from multiprocessing.managers import BaseManager,DictProxy
 
 def extract(use_intermediate_files=True,make_intermediate_files=False):
     global FILE_LIST,ERROR_LIST,dataComments,dataDic,metric
@@ -68,6 +69,8 @@ def extract(use_intermediate_files=True,make_intermediate_files=False):
         for f in FILE_LIST:
             if(f not in ERROR_LIST):
                 if(d in f.split("/")):
+                    if(d not in dataDic):
+                        dataDic[d]=[]
                     dataDic[d].append(f)
     
     # extracting dataComments
@@ -130,18 +133,18 @@ def loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,full_part):
                     obj2.coherency(dataset,file,comment)
                     obj3.similarity(dataset,file,comment)
                     obj4.term_relatedness(dataset,file,comment)
+                    # print(metric[dataset][file][comment])
                 except Exception:
                     continue
                 # break
         except KeyError: #path has no comment
             continue
-    #     break
+        # break
  
 def main():
     
     extract(True,False)
     # extract(False,True)clear.
-
     print(len(dataDic))
     print(len(dataComments))
     print(len(metric))
@@ -154,17 +157,20 @@ def main():
     # print(metric.keys())
     for dataset,files in dataDic.items():
         n=len(files)
-        parts=multiprocessing.cpu_count()
-        l=[files[(i*len(files))//parts:((i+1)*len(files))//parts] for i in range(parts)]
-        Processes=[]
-        for index,part in enumerate(l):
-            print("Creating Process ",index)
-            process=Process(target=loop_files,args=(dataset,part,obj1,obj2,obj3,obj4,dataComments,files))
-            Processes.append(process)
-        for p in Processes: 
-            p.start()
-        for p in Processes:
-            p.join()
+        loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,files)
+        # parts=multiprocessing.cpu_count()
+        # l=[files[(i*len(files))//parts:((i+1)*len(files))//parts] for i in range(parts)]
+        # Processes=[]
+        # for index,part in enumerate(l):
+        #     print("Creating Process ",index)
+        #     process=Process(target=loop_files,args=(dataset,part,obj1,obj2,obj3,obj4,dataComments,files))
+        #     Processes.append(process)
+        # for p in Processes: 
+        #     p.start()
+        # for p in Processes:
+        #     p.join()
+        
+        # break
         
     
     

@@ -1,3 +1,6 @@
 __pycache__/
 .intermediate/
 .gitignore
+log.txt
+Val
+train.py
