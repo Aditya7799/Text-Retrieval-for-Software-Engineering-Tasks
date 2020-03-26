@@ -8,14 +8,8 @@ import statistics                           #mean()
 import nltk
 from nltk.corpus import stopwords
 from tqdm import tqdm                      
-from multiprocessing import Process,Manager
-from multiprocessing.managers import BaseManager,DictProxy
+
 # folder names of the datasets
-
-class MyManager(BaseManager):
-    pass
-
-MyManager.register('defaultdict',defaultdict,DictProxy)
 dataset_directory_list=[
     "codeblocks-17.12svn11256",
     "7z1900-src"
@@ -33,15 +27,6 @@ file_extension_list=[
 FILE_LIST=[]
 ERROR_LIST=[]
 
-# datadic={datasetName:[list of path of valid files]}
-
-# manager=Manager()
-# dataDic=manager.dict()
-# # dataComments={filepath:Comment}
-# dataComments=manager.dict()
-
-# # metric={dataset:{path:{comment:[AVGIDF]}}}
-# metric=manager.dict()
 
 dataDic={}
 dataComments={}

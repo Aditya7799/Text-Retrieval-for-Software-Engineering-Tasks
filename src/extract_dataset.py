@@ -16,9 +16,12 @@ import multiprocessing
 from multiprocessing import Process,Manager
 from multiprocessing.managers import BaseManager,DictProxy
 
+def isValid(f):
+    return (f[f.rfind(".")+1:] in file_extension_list)
+    
+    return False
 def extract(use_intermediate_files=True,make_intermediate_files=False):
     global FILE_LIST,ERROR_LIST,dataComments,dataDic,metric
-
     if(use_intermediate_files):
         file_list=open(".intermediate/FILE_LIST","r")
         error_list=open(".intermediate/ERROR_LIST","r")
@@ -82,9 +85,8 @@ def extract(use_intermediate_files=True,make_intermediate_files=False):
                 data=file.read()
                 # PREPROCESS MULTI_LINE COMMENTS HERE
                 comments=comment_parser.extract_comments_from_str(data)
-
-                l=[c.text() for c in comments]
-                dataComments[path]=l
+                comments=preprocess(comments)
+                dataComments[path]=comments
             except (UnicodeDecodeError,comment_parser.UnsupportedError) as e:
                 continue
             file.close()
@@ -120,6 +122,34 @@ def extract(use_intermediate_files=True,make_intermediate_files=False):
         datadic.close()
         datacomments.close()
 
+def preprocess(comments):
+    l=[]
+    i=0
+    while(i<len(comments)):
+        if(comments[i].is_multiline()):
+            l.append(comments[i].text())
+            i+=1
+            continue
+        j=i+1
+        string=comments[i].text()
+        while(j<len(comments)):
+            if(comments[j].line_number()-comments[i].line_number()==1):
+                string=string+" "+comments[j].text()
+                j+=1
+                i+=1
+                continue
+            else:
+                break
+        l.append(string)
+        i=j
+    return l
+
+
+        
+
+
+
+
 def loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,full_part):
     print("Looping files in Dataset:",dataset)
     for file in tqdm(files):
@@ -143,43 +173,51 @@ def loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,full_part):
  
 def main():
     
-    extract(True,False)
+    extract(False,False)
     # extract(False,True)clear.
     print(len(dataDic))
     print(len(dataComments))
+    print(sum([len(i) for i in dataComments.values()]))
     print(len(metric))
-    print(len(metric["codeblocks-17.12svn11256"]))
-    mem=Memoization(dataDic,dataComments,metric)
-    obj1=Specificity(dataDic,dataComments,metric,mem)
-    obj2=Coherency(dataDic,dataComments,metric,mem)
-    obj3=Similarity(dataDic,dataComments,metric,mem)
-    obj4=Term_Relatedness(dataDic,dataComments,metric,mem)
-    # print(metric.keys())
-    for dataset,files in dataDic.items():
-        n=len(files)
-        loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,files)
-        # parts=multiprocessing.cpu_count()
-        # l=[files[(i*len(files))//parts:((i+1)*len(files))//parts] for i in range(parts)]
-        # Processes=[]
-        # for index,part in enumerate(l):
-        #     print("Creating Process ",index)
-        #     process=Process(target=loop_files,args=(dataset,part,obj1,obj2,obj3,obj4,dataComments,files))
-        #     Processes.append(process)
-        # for p in Processes: 
-        #     p.start()
-        # for p in Processes:
-        #     p.join()
-        
-        # break
-        
-    
-    
-    print(metric["codeblocks-17.12svn11256"]["/home/aditya/Desktop/SE_Project/src/Datasets/codeblocks-17.12svn11256/src/tools/ConsoleRunner/main.cpp"]['\n * This file is part of the Code::Blocks IDE and licensed under the GNU General Public License, version 3\n * http://www.gnu.org/licenses/gpl-3.0.html\n *\n * $Revision$\n * $Id$\n * $HeadURL$\n '])
+    # print(len(metric["codeblocks-17.12svn11256"]))
 
-    text=json.dumps(metric)
-    f=open("Val","w")
-    f.write(text)
-    f.close()
+
+
+
+
+
+
+    # mem=Memoization(dataDic,dataComments,metric)
+    # obj1=Specificity(dataDic,dataComments,metric,mem)
+    # obj2=Coherency(dataDic,dataComments,metric,mem)
+    # obj3=Similarity(dataDic,dataComments,metric,mem)
+    # obj4=Term_Relatedness(dataDic,dataComments,metric,mem)
+    # # print(metric.keys())
+    # for dataset,files in dataDic.items():
+    #     n=len(files)
+    #     loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,files)
+    #     # parts=multiprocessing.cpu_count()
+    #     # l=[files[(i*len(files))//parts:((i+1)*len(files))//parts] for i in range(parts)]
+    #     # Processes=[]
+    #     # for index,part in enumerate(l):
+    #     #     print("Creating Process ",index)
+    #     #     process=Process(target=loop_files,args=(dataset,part,obj1,obj2,obj3,obj4,dataComments,files))
+    #     #     Processes.append(process)
+    #     # for p in Processes: 
+    #     #     p.start()
+    #     # for p in Processes:
+    #     #     p.join()
+        
+    #     # break
+        
+    
+    
+    # print(metric["codeblocks-17.12svn11256"]["/home/aditya/Desktop/SE_Project/src/Datasets/codeblocks-17.12svn11256/src/tools/ConsoleRunner/main.cpp"]['\n * This file is part of the Code::Blocks IDE and licensed under the GNU General Public License, version 3\n * http://www.gnu.org/licenses/gpl-3.0.html\n *\n * $Revision$\n * $Id$\n * $HeadURL$\n '])
+
+    # text=json.dumps(metric)
+    # f=open("Val","w")
+    # f.write(text)
+    # f.close()
 
 
 
