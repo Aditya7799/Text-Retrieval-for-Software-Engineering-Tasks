@@ -4,8 +4,13 @@ Papers refered are linked in the repository.
 
 **Need to create a hidden folder called ".intermediate if you want to store the intermediate files in extract_dataset.py**
 
-**Latest Commit has file "data.csv" which has dump of metric dictionary after running all 21 Pre-Retieval Metrics for both the datasets.
+
 Note that Coherence Score is still to be implemented.
+
+# Latest Commit Changes
+- Latest Commit has file "data.csv" which has dump of metric dictionary after running all 21 Pre-Retieval Metrics for both the datasets.
+- SpamComments function implemented to remove spam comments like
+"*********" , "----------------"  and empty Comments.
 
 # Requirements so far
 1.  **nltk and corpus-data**
