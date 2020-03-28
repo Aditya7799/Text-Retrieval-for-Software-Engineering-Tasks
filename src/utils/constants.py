@@ -33,3 +33,5 @@ dataComments={}
 metric={}
 stopwords=set(stopwords.words('english'))
 
+
+spam_comments=['*',"-","=","/","_","*)"," "]

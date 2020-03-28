@@ -123,9 +123,24 @@ def extract(use_intermediate_files=True,make_intermediate_files=False):
         datacomments.close()
 
 def preprocess(comments):
+    def isSpamComment(comment):
+        global spam_comments
+        if(len(comment.text())==0):
+            # print("Empty")
+            return True
+        c=list(set(comment.text()))
+        if(len(c)==0):
+            return True
+        if(len(c)==1 and c[0] in spam_comments):
+            # print("Comment",comment.text())
+            return True
+        return False
     l=[]
     i=0
     while(i<len(comments)):
+        if(isSpamComment(comments[i])):
+            i+=1
+            continue
         if(comments[i].is_multiline()):
             l.append(comments[i].text())
             i+=1
@@ -133,7 +148,7 @@ def preprocess(comments):
         j=i+1
         string=comments[i].text()
         while(j<len(comments)):
-            if(comments[j].line_number()-comments[i].line_number()==1):
+            if(comments[j].line_number()-comments[i].line_number()==1 and not(isSpamComment(comments[j]))):
                 string=string+" "+comments[j].text()
                 j+=1
                 i+=1
@@ -173,7 +188,7 @@ def loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,full_part):
  
 def main():
     
-    extract(False,False)
+    extract(False,True)
     # extract(False,True)clear.
     print(len(dataDic))
     print(len(dataComments))

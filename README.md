@@ -4,7 +4,9 @@ Papers refered are linked in the repository.
 
 **Need to create a hidden folder called ".intermediate if you want to store the intermediate files in extract_dataset.py**
 
-**Latest Commit has file "Val"(32Mb) which has dump of metric dictionary after running specificity (12 pre-retrieval metrics).
+**Latest Commit has file "data.csv" which has dump of metric dictionary after running all 21 Pre-Retieval Metrics for both the datasets.
+Note that Coherence Score is still to be implemented.
+
 # Requirements so far
 1.  **nltk and corpus-data**
 So far this is used to remove stop-words from the queries.
@@ -12,6 +14,9 @@ So far this is used to remove stop-words from the queries.
 Used to show progress (based on iterations completed)
 3.  **comment-parser**
 Used to extract comments from source-code files
+4. **json** Used to dump and load dictionaries from files.
+5. **statistics** used for mean() pstdev() functions.
+6. **math** used for log() function.
 
 # Datasets used
 1.  **CodeBlocks Source code**
