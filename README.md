@@ -9,7 +9,8 @@ Note that Coherence Score is still to be implemented.
 Note that **whoosh** is used instead of **Lucene** for indexing and searching.
 
 # Latest Commit Changes
-- add whosh_src.py which gives y value to comments based on BM25F scoring.
+- ~~add whosh_src.py which gives y value to comments based on BM25F scoring.`~~
+- memoized the retured whoosh values(1 or 0).
   
 
 # Requirements so far

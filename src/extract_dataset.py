@@ -161,7 +161,7 @@ def preprocess(comments):
         i=j
     return l
 
-def loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,full_part):
+def loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,full_part,mem):
     print("Looping files in Dataset:",dataset)
     for file in tqdm(files):
         try:
@@ -174,8 +174,9 @@ def loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,full_part):
                     obj2.coherency(dataset,file,comment)
                     obj3.similarity(dataset,file,comment)
                     obj4.term_relatedness(dataset,file,comment)
-                    y=search(dataset,file,comment,1)
+                    y=search(dataset,file,comment,mem,1)
                     metric[dataset][file][comment].append(y)
+                    print(y)
                     # print(metric[dataset][file][comment])
                 except Exception:
                     continue
@@ -202,7 +203,7 @@ def main():
     # print(metric.keys())
     for dataset,files in dataDic.items():
         n=len(files)
-        loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,files)
+        loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,files,mem)
         # parts=multiprocessing.cpu_count()
         # l=[files[(i*len(files))//parts:((i+1)*len(files))//parts] for i in range(parts)]
         # Processes=[]

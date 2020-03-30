@@ -42,7 +42,9 @@ def createIndex():
         writer.commit()
 
 
-def search(dataset,file,comment,maxN=3):
+def search(dataset,file,comment,mem,maxN=3):
+    if(comment in mem.WHOOSH[dataset]):
+        return mem.WHOOSH[dataset][comment]
     ix=open_dir("indexdir/index_"+dataset)
     searcher=ix.searcher(weighting=scoring.BM25F)
     query=QueryParser("content",ix.schema).parse(comment)
@@ -55,9 +57,10 @@ def search(dataset,file,comment,maxN=3):
         r=[results[i]['title'] for i in range(len(results))]
     # print(r)
     if(file in r and r.index(file)<maxN):
-        return 1
+        mem.WHOOSH[dataset][comment]=1
     else:
-        return 0
+        mem.WHOOSH[dataset][comment]=0
+    return mem.WHOOSH[dataset][comment]
 
 
 if __name__ == "__main__":
