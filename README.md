@@ -6,11 +6,11 @@ Papers refered are linked in the repository.
 
 
 Note that Coherence Score is still to be implemented.
+Note that **whoosh** is used instead of **Lucene** for indexing and searching.
 
 # Latest Commit Changes
-- Latest Commit has file "data.csv" which has dump of metric dictionary after running all 21 Pre-Retieval Metrics for both the datasets.
-- SpamComments function implemented to remove spam comments like
-"*********" , "----------------"  and empty Comments.
+- add whosh_src.py which gives y value to comments based on BM25F scoring.
+  
 
 # Requirements so far
 1.  **nltk and corpus-data**
@@ -22,6 +22,7 @@ Used to extract comments from source-code files
 4. **json** Used to dump and load dictionaries from files.
 5. **statistics** used for mean() pstdev() functions.
 6. **math** used for log() function.
+7. **whoosh** used to index and search the source code dataset to get the y values for training the classifiers.
 
 # Datasets used
 1.  **CodeBlocks Source code**

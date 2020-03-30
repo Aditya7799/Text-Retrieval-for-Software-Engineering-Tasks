@@ -15,11 +15,13 @@ import threading
 import multiprocessing
 from multiprocessing import Process,Manager
 from multiprocessing.managers import BaseManager,DictProxy
+from whoosh_src import *
 
 def isValid(f):
     return (f[f.rfind(".")+1:] in file_extension_list)
     
     return False
+
 def extract(use_intermediate_files=True,make_intermediate_files=False):
     global FILE_LIST,ERROR_LIST,dataComments,dataDic,metric
     if(use_intermediate_files):
@@ -159,12 +161,6 @@ def preprocess(comments):
         i=j
     return l
 
-
-        
-
-
-
-
 def loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,full_part):
     print("Looping files in Dataset:",dataset)
     for file in tqdm(files):
@@ -178,6 +174,8 @@ def loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,full_part):
                     obj2.coherency(dataset,file,comment)
                     obj3.similarity(dataset,file,comment)
                     obj4.term_relatedness(dataset,file,comment)
+                    y=search(dataset,file,comment,1)
+                    metric[dataset][file][comment].append(y)
                     # print(metric[dataset][file][comment])
                 except Exception:
                     continue
@@ -188,53 +186,47 @@ def loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,full_part):
  
 def main():
     
-    extract(False,True)
-    # extract(False,True)clear.
+    extract(True,False)
+    # extract(False,True)
     print(len(dataDic))
     print(len(dataComments))
     print(sum([len(i) for i in dataComments.values()]))
     print(len(metric))
     # print(len(metric["codeblocks-17.12svn11256"]))
 
-
-
-
-
-
-
-    # mem=Memoization(dataDic,dataComments,metric)
-    # obj1=Specificity(dataDic,dataComments,metric,mem)
-    # obj2=Coherency(dataDic,dataComments,metric,mem)
-    # obj3=Similarity(dataDic,dataComments,metric,mem)
-    # obj4=Term_Relatedness(dataDic,dataComments,metric,mem)
-    # # print(metric.keys())
-    # for dataset,files in dataDic.items():
-    #     n=len(files)
-    #     loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,files)
-    #     # parts=multiprocessing.cpu_count()
-    #     # l=[files[(i*len(files))//parts:((i+1)*len(files))//parts] for i in range(parts)]
-    #     # Processes=[]
-    #     # for index,part in enumerate(l):
-    #     #     print("Creating Process ",index)
-    #     #     process=Process(target=loop_files,args=(dataset,part,obj1,obj2,obj3,obj4,dataComments,files))
-    #     #     Processes.append(process)
-    #     # for p in Processes: 
-    #     #     p.start()
-    #     # for p in Processes:
-    #     #     p.join()
+    mem=Memoization(dataDic,dataComments,metric)
+    obj1=Specificity(dataDic,dataComments,metric,mem)
+    obj2=Coherency(dataDic,dataComments,metric,mem)
+    obj3=Similarity(dataDic,dataComments,metric,mem)
+    obj4=Term_Relatedness(dataDic,dataComments,metric,mem)
+    # print(metric.keys())
+    for dataset,files in dataDic.items():
+        n=len(files)
+        loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,files)
+        # parts=multiprocessing.cpu_count()
+        # l=[files[(i*len(files))//parts:((i+1)*len(files))//parts] for i in range(parts)]
+        # Processes=[]
+        # for index,part in enumerate(l):
+        #     print("Creating Process ",index)
+        #     process=Process(target=loop_files,args=(dataset,part,obj1,obj2,obj3,obj4,dataComments,files))
+        #     Processes.append(process)
+        # for p in Processes: 
+        #     p.start()
+        # for p in Processes:
+        #     p.join()
         
-    #     # break
+        # break
         
     
     
     # print(metric["codeblocks-17.12svn11256"]["/home/aditya/Desktop/SE_Project/src/Datasets/codeblocks-17.12svn11256/src/tools/ConsoleRunner/main.cpp"]['\n * This file is part of the Code::Blocks IDE and licensed under the GNU General Public License, version 3\n * http://www.gnu.org/licenses/gpl-3.0.html\n *\n * $Revision$\n * $Id$\n * $HeadURL$\n '])
 
-    # text=json.dumps(metric)
-    # f=open("Val","w")
-    # f.write(text)
-    # f.close()
+    text=json.dumps(metric)
+    f=open("Val","w")
+    f.write(text)
+    f.close()
 
 
 
-
-main()
+if __name__ == "__main__":
+    main()
