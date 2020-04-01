@@ -18,9 +18,8 @@ from multiprocessing.managers import BaseManager,DictProxy
 from whoosh_src import *
 
 def isValid(f):
-    return (f[f.rfind(".")+1:] in file_extension_list)
-    
-    return False
+    return (os.path.splitext(f)[1] in file_extension_list)
+
 
 def extract(use_intermediate_files=True,make_intermediate_files=False):
     global FILE_LIST,ERROR_LIST,dataComments,dataDic,metric
@@ -161,7 +160,7 @@ def preprocess(comments):
         i=j
     return l
 
-def loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,full_part,mem):
+def loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,full_part,objIREngine):
     print("Looping files in Dataset:",dataset)
     for file in tqdm(files):
         try:
@@ -169,16 +168,15 @@ def loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,full_part,mem):
             print("Looping",len(comments)," comments in file :",full_part.index(file),file)
             for comment in  comments:
                 try:
-                    # print(repr(comment))
                     obj1.specificity(dataset,file,comment)
                     obj2.coherency(dataset,file,comment)
                     obj3.similarity(dataset,file,comment)
                     obj4.term_relatedness(dataset,file,comment)
-                    y=search(dataset,file,comment,mem,1)
+                    y=objIREngine.search(dataset,file,comment)
                     metric[dataset][file][comment].append(y)
-                    print(y)
                     # print(metric[dataset][file][comment])
-                except Exception:
+                except Exception as e:
+                    print(e)
                     continue
                 # break
         except KeyError: #path has no comment
@@ -187,23 +185,23 @@ def loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,full_part,mem):
  
 def main():
     
-    extract(True,False)
-    # extract(False,True)
+    # extract(True,False)
+    extract(False,True)
     print(len(dataDic))
     print(len(dataComments))
     print(sum([len(i) for i in dataComments.values()]))
     print(len(metric))
-    # print(len(metric["codeblocks-17.12svn11256"]))
 
     mem=Memoization(dataDic,dataComments,metric)
-    obj1=Specificity(dataDic,dataComments,metric,mem)
-    obj2=Coherency(dataDic,dataComments,metric,mem)
-    obj3=Similarity(dataDic,dataComments,metric,mem)
-    obj4=Term_Relatedness(dataDic,dataComments,metric,mem)
+    objSpecificity = Specificity(dataDic,dataComments,metric,mem)
+    objCoherency = Coherency(dataDic,dataComments,metric,mem)
+    objSimilarity = Similarity(dataDic,dataComments,metric,mem)
+    objRelatedness = Term_Relatedness(dataDic,dataComments,metric,mem)
+    objIREngine = IREngine(dataDic,3)
     # print(metric.keys())
     for dataset,files in dataDic.items():
         n=len(files)
-        loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,files,mem)
+        loop_files(dataset,files,objSpecificity,objCoherency,objSimilarity,objRelatedness,dataComments,files,objIREngine)
         # parts=multiprocessing.cpu_count()
         # l=[files[(i*len(files))//parts:((i+1)*len(files))//parts] for i in range(parts)]
         # Processes=[]
@@ -220,7 +218,7 @@ def main():
         
     
     
-    # print(metric["codeblocks-17.12svn11256"]["/home/aditya/Desktop/SE_Project/src/Datasets/codeblocks-17.12svn11256/src/tools/ConsoleRunner/main.cpp"]['\n * This file is part of the Code::Blocks IDE and licensed under the GNU General Public License, version 3\n * http://www.gnu.org/licenses/gpl-3.0.html\n *\n * $Revision$\n * $Id$\n * $HeadURL$\n '])
+    # # print(metric["codeblocks-17.12svn11256"]["/home/aditya/Desktop/SE_Project/src/Datasets/codeblocks-17.12svn11256/src/tools/ConsoleRunner/main.cpp"]['\n * This file is part of the Code::Blocks IDE and licensed under the GNU General Public License, version 3\n * http://www.gnu.org/licenses/gpl-3.0.html\n *\n * $Revision$\n * $Id$\n * $HeadURL$\n '])
 
     text=json.dumps(metric)
     f=open("Val","w")

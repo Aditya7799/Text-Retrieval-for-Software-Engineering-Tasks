@@ -19,7 +19,7 @@ class Memoization():
         self.scq={} 
         self.W_BAR={}
         self.Var={}
-        self.WHOOSH={}
+
 
         for dataset in dataDic.keys():
             self.IDF[dataset]={}
@@ -30,7 +30,7 @@ class Memoization():
             self.scq[dataset]={}
             self.W_BAR[dataset]={}
             self.Var[dataset]={} 
-            self.WHOOSH[dataset]={}
+
 
 class Specificity():
     def __init__(self,dataDic,dataComments,metric,mem):

@@ -16,11 +16,11 @@ dataset_directory_list=[
 ]
 # Possible extensions of the files with source code
 file_extension_list=[
-    "cpp",
-    "c",
-    "h",
-    "cppdata",
-    "script"
+    ".cpp",
+    ".c",
+    # ".h",
+    # ".cppdata",
+    # ".script"
 ]
 
 # List containing the items stored in the respective files

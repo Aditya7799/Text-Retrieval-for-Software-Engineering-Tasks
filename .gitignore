@@ -1,7 +1,7 @@
 __pycache__/
 .intermediate/
 indexdir/
-.gitignore
 log.txt
 Val
-train.py
+data.csv
+data_analysis.py
