@@ -35,3 +35,6 @@ stopwords=set(stopwords.words('english'))
 
 
 spam_comments=['*',"-","=","/","_","*)"," "]
+
+# GLOBAL_PATH points to src directory
+GLOBAL_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

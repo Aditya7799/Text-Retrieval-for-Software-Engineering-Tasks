@@ -10,16 +10,13 @@ from nltk.corpus import stopwords
 from tqdm import tqdm                      
 from utils.PreRetrieval_Metrics import *
 from utils.constants import *
-GLOBAL_PATH = os.path.dirname(os.path.abspath(__file__))
 import threading  
 import multiprocessing
 from multiprocessing import Process,Manager
 from multiprocessing.managers import BaseManager,DictProxy
-from whoosh_src import *
 
 def isValid(f):
     return (os.path.splitext(f)[1] in file_extension_list)
-
 
 def extract(use_intermediate_files=True,make_intermediate_files=False):
     global FILE_LIST,ERROR_LIST,dataComments,dataDic,metric
@@ -167,6 +164,8 @@ def loop_files(dataset,files,obj1,obj2,obj3,obj4,dataComments,full_part,objIREng
             comments=dataComments[file]
             print("Looping",len(comments)," comments in file :",full_part.index(file),file)
             for comment in  comments:
+                if(len(metric[dataset][file][comment])>22):
+                    continue
                 try:
                     obj1.specificity(dataset,file,comment)
                     obj2.coherency(dataset,file,comment)
