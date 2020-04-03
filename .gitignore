@@ -3,5 +3,4 @@ __pycache__/
 indexdir/
 log.txt
 Val
-data.csv
 data_analysis.py

@@ -9,10 +9,11 @@ Note that Coherence Score is still to be implemented.
 Note that **whoosh** is used instead of **Lucene** for indexing and searching.
 
 # Latest Commit Changes
-- ~~memoized the retured whoosh values(1 or 0).~~
-- added whoosh_src code to a class called IREngine
-- coded basic classifiers in train.py
-- 
+- ~~added whoosh_src code to a class called IREngine~~
+- ~~coded basic classifiers in train.py~~
+- added hyperparameters to classifiers.
+- tried implementing SMOTE(Sythetic Minority OverSampling Technique) to balance the dataset. Note that test sample is untouched.
+- data.csv has 21 pre-retrieval metrics + y label  for the two datasets.
   
 
 # Requirements so far
